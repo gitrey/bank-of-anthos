@@ -40,8 +40,10 @@ from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from db import UserDb
 
 def create_app():
-    """Flask application factory to create instances
-    of the Userservice Flask App
+    """Create and configure the Flask application for the userservice.
+
+    Returns:
+        Flask: A configured Flask application instance.
     """
     app = Flask(__name__)
 
@@ -51,38 +53,37 @@ def create_app():
 
     @app.route('/version', methods=['GET'])
     def version():
-        """
-        Service version endpoint
+        """Return the service version.
+
+        Returns:
+            tuple: A tuple containing the version string and HTTP status code 200.
         """
         return app.config['VERSION'], 200
 
     @app.route('/ready', methods=['GET'])
     def readiness():
-        """
-        Readiness probe
+        """Return the service readiness status.
+
+        Returns:
+            tuple: A tuple containing "ok" and HTTP status code 200.
         """
         return 'ok', 200
 
     @app.route('/users', methods=['POST'])
     def create_user():
-        """Create a user record.
+        """Create a new user account.
 
-        Fails if that username already exists.
+        This endpoint handles user registration. It expects a form with user details,
+        validates the input, and creates a new user in the database.
 
-        Generates a unique accountid.
+        Returns:
+            tuple: An empty JSON response and HTTP status code 201 on success.
+                   An error message and appropriate HTTP status code on failure.
 
-        request fields:
-        - username
-        - password
-        - password-repeat
-        - firstname
-        - lastname
-        - birthday
-        - timezone
-        - address
-        - state
-        - zip
-        - ssn
+        Raises:
+            UserWarning: If the request is missing required fields or if validation fails.
+            NameError: If a user with the given username already exists.
+            SQLAlchemyError: If there is an error interacting with the database.
         """
         try:
             app.logger.debug('Sanitizing input.')
@@ -132,6 +133,20 @@ def create_app():
         return jsonify({}), 201
 
     def __validate_new_user(req):
+        """Validate the required fields in a new user request.
+
+        This helper function checks if the request contains all the necessary fields
+        and if the values meet the required criteria.
+
+        Args:
+            req (dict): A dictionary containing the user's registration data.
+
+        Returns:
+            None
+
+        Raises:
+            UserWarning: If any validation checks fail.
+        """
         app.logger.debug('validating create user request: %s', str(req))
         # Check if required fields are filled
         fields = (
@@ -161,15 +176,19 @@ def create_app():
 
     @app.route('/login', methods=['GET'])
     def login():
-        """Login a user and return a JWT token
+        """Authenticate a user and return a JWT token.
 
-        Fails if username doesn't exist or password doesn't match hash
+        This endpoint handles user login. It expects a username and password,
+        validates the credentials, and returns a JWT token upon successful authentication.
 
-        token expiry time determined by environment variable
+        Returns:
+            tuple: A JSON response containing the JWT token and HTTP status code 200 on success.
+                   An error message and appropriate HTTP status code on failure.
 
-        request fields:
-        - username
-        - password
+        Raises:
+            LookupError: If the user with the given username does not exist.
+            PermissionError: If the provided password does not match the stored hash.
+            SQLAlchemyError: If there is an error interacting with the database.
         """
         app.logger.debug('Sanitizing login input.')
         username = bleach.clean(request.args.get('username'))
@@ -213,7 +232,11 @@ def create_app():
 
     @atexit.register
     def _shutdown():
-        """Executed when web app is terminated."""
+        """Cleanly shut down the userservice.
+
+        This function is executed when the Flask application terminates.
+        It logs a message indicating that the service is stopping.
+        """
         app.logger.info("Stopping userservice.")
 
     # Set up logger

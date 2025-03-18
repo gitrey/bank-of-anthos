@@ -22,12 +22,18 @@ from sqlalchemy import create_engine, MetaData, Table, Column, String, Date, Lar
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 
 class UserDb:
-    """
-    UserDb provides a set of helper functions over SQLAlchemy
-    to handle db operations for userservice
-    """
+    """Provides a set of helper functions over SQLAlchemy to manage user data in the database."""
 
     def __init__(self, uri, logger=logging):
+        """Initialize the UserDb class.
+
+        This sets up the database connection, defines the users table schema,
+        and enables tracing instrumentation for SQLAlchemy.
+
+        Args:
+            uri (str): The database connection URI.
+            logger (logging.Logger, optional): A logger instance. Defaults to the root logger.
+        """
         self.engine = create_engine(uri)
         self.logger = logger
         self.users_table = Table(
@@ -55,9 +61,13 @@ class UserDb:
     def add_user(self, user):
         """Add a user to the database.
 
-        Params: user - a key/value dict of attributes describing a new user
-                    {'username': username, 'password': password, ...}
-        Raises: SQLAlchemyError if there was an issue with the database
+        Args:
+            user (dict): A dictionary containing the user's data, including:
+                         'username', 'passhash', 'firstname', 'lastname', 'birthday',
+                         'timezone', 'address', 'state', 'zip', and 'ssn'.
+
+        Raises:
+            SQLAlchemyError: If there is an issue executing the database query.
         """
         statement = self.users_table.insert().values(user)
         self.logger.debug('QUERY: %s', str(statement))
@@ -65,7 +75,14 @@ class UserDb:
             conn.execute(statement)
 
     def generate_accountid(self):
-        """Generates a globally unique alphanumerical accountid."""
+        """Generate a unique alphanumeric account ID.
+
+        This function generates a random 10-digit account ID and ensures its uniqueness
+        by querying the database.
+
+        Returns:
+            str: A unique 10-digit alphanumeric account ID.
+        """
         self.logger.debug('Generating an account ID')
         accountid = None
         with self.engine.connect() as conn:
@@ -85,13 +102,19 @@ class UserDb:
         return accountid
 
     def get_user(self, username):
-        """Get user data for the specified username.
+        """Retrieve user data from the database by username.
 
-        Params: username - the username of the user
-        Return: a key/value dict of user attributes,
-                {'username': username, 'accountid': accountid, ...}
-                or None if that user does not exist
-        Raises: SQLAlchemyError if there was an issue with the database
+        Args:
+            username (str): The username of the user to retrieve.
+
+        Returns:
+            dict: A dictionary containing the user's data if found, including:
+                  'accountid', 'username', 'passhash', 'firstname', 'lastname',
+                  'birthday', 'timezone', 'address', 'state', 'zip', and 'ssn'.
+                  Returns None if no user is found with the given username.
+
+        Raises:
+            SQLAlchemyError: If there is an issue executing the database query.
         """
         statement = self.users_table.select().where(self.users_table.c.username == username)
         self.logger.debug('QUERY: %s', str(statement))
