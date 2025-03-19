@@ -20,24 +20,43 @@ import java.util.Deque;
 
 
 /**
- * Defines the account Info object used for the LedgerReaderCache
+ * Defines the account Info object used for the LedgerReaderCache.
+ *
+ * This class represents the account information stored in the cache, including the
+ * balance and a list of recent transactions.
  */
 public class AccountInfo {
+  /** The current balance of the account. */
   Long balance;
+  /** The list of recent transactions for the account. */
   Deque<Transaction> transactions;
 
-  // Constructor
+  /**
+   * Constructor for AccountInfo.
+   *
+   * @param balance The initial balance of the account.
+   * @param transactions The initial list of transactions for the account.
+   */
   public AccountInfo(Long balance,
     Deque<Transaction> transactions) {
         this.balance = balance;
         this.transactions = transactions;
     }
 
-// Getters
+  /**
+   * Retrieves the list of transactions for the account.
+   *
+   * @return The list of transactions.
+   */
   public Deque<Transaction> getTransactions() {
     return transactions;
   }
 
+  /**
+   * Retrieves the current balance of the account.
+   *
+   * @return The account balance.
+   */
   public Long getBalance() {
     return balance;
   }
